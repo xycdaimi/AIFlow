@@ -1,0 +1,36 @@
+# Core dependencies
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-multipart
+
+# Database
+redis
+asyncpg
+psycopg2-binary
+
+# Message Queue
+aio-pika
+
+# Service Discovery
+py-consul
+
+# HTTP Client
+httpx
+aiohttp
+
+# Utilities
+python-dotenv
+python-json-logger
+structlog
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+
+# Object Storage
+minio
+
