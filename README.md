@@ -8,7 +8,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[English](README_EN.md) | 简体中文
+[English](docs/README_EN.md) | 简体中文
 
 </div>
 
@@ -696,8 +696,15 @@ AIFlow/
 │   └── log_service/            # 日志服务
 ├── scripts/                    # 脚本工具
 │   ├── init_database.py        # 数据库初始化
+│   ├── init_database.sql       # 数据库表结构 SQL
 │   ├── start_all_services.bat  # 启动脚本 (Windows)
-│   └── start_all_services.sh   # 启动脚本 (Linux/Mac)
+│   ├── start_all_services.sh   # 启动脚本 (Linux/Ubuntu)
+│   ├── stop_all_services.bat   # 停止脚本 (Windows)
+│   ├── stop_all_services.sh    # 停止脚本 (Linux/Ubuntu)
+│   ├── restart_all_services.bat # 重启脚本 (Windows)
+│   ├── restart_all_services.sh  # 重启脚本 (Linux/Ubuntu)
+│   ├── setup_permissions.sh    # 设置脚本权限 (Linux/Ubuntu)
+│   └── README.md               # 脚本使用说明
 ├── tests/                      # 测试文件
 ├── docs/                       # 文档
 ├── logs/                       # 日志目录
