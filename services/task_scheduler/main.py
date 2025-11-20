@@ -1,5 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-Task Scheduler - 智能任务调度器
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: Task Scheduler - 智能任务调度器
 
 职责：
 1. 从 RabbitMQ 消费任务

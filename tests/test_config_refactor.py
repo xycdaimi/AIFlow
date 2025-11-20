@@ -1,5 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-测试重构后的配置使用
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: 测试重构后的配置使用
 
 验证 api_gateway/main.py 和 minio_client.py 使用新的 EnvConfig 配置类
 """

@@ -1,4 +1,11 @@
-"""GPT Image-1 Model Service - GPT Image-1 图像编辑服务接口"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: GPT Image-1 Model Service - GPT Image-1 图像编辑服务接口
+"""
 
 import httpx
 from typing import Dict, Any

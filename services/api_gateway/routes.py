@@ -1,4 +1,11 @@
-"""API routes for API Gateway."""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: API routes for API Gateway
+"""
 
 from fastapi import APIRouter, HTTPException, Request, status, UploadFile, Form, File, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials

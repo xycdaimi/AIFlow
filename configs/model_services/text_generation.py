@@ -1,4 +1,11 @@
-"""Text Generation Model Service - 文本生成模型服务接口"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: Text Generation Model Service - 文本生成模型服务接口
+"""
 
 import httpx
 from typing import Dict, Any

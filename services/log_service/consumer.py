@@ -1,4 +1,11 @@
-"""Log consumer implementation."""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: Log consumer implementation
+"""
 
 import asyncio
 import json

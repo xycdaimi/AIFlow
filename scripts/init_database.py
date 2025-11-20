@@ -1,4 +1,11 @@
-"""初始化 PostgreSQL 数据库表结构"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: 初始化 PostgreSQL 数据库表结构
+"""
 
 import asyncio
 import asyncpg

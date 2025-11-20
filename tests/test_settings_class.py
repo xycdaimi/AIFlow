@@ -1,5 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-测试新的 Settings 配置类
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: 测试新的 Settings 配置类
 
 验证 Settings 类提供业务友好的配置访问接口
 """

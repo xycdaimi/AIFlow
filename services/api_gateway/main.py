@@ -1,4 +1,11 @@
-"""API Gateway main application."""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: API Gateway main application
+"""
 
 import uvicorn
 from fastapi import FastAPI

@@ -1,4 +1,11 @@
-"""Model Inference - 模型推理调度器"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: Model Inference - 模型推理调度器
+"""
 
 import importlib.util
 from typing import Dict, Any, Callable

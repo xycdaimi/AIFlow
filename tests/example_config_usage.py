@@ -1,5 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-示例：如何使用 EnvConfig 配置类
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: 示例：如何使用 EnvConfig 配置类
 
 这个示例展示了如何使用 core.config 模块中的 EnvConfig 类来：
 1. 读取 .env 文件配置

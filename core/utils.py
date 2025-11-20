@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: Utility modules for AIFlow platform
+"""
+
 import json
 import asyncio
 from typing import Optional, Dict, Any

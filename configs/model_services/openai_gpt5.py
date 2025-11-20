@@ -1,4 +1,11 @@
-"""OpenAI GPT-5 Model Service - OpenAI GPT-5 模型服务接口"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: OpenAI GPT-5 Model Service - OpenAI GPT-5 模型服务接口
+"""
 
 import httpx
 from typing import Dict, Any

@@ -1,4 +1,11 @@
-"""Structured logging utilities for AI Route platform."""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: Structured logging utilities for AI Route platform
+"""
 
 import structlog
 import logging

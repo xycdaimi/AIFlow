@@ -1,4 +1,11 @@
-"""Data protocols and schemas for AI Route platform."""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: Data protocols and schemas for AI Route platform
+"""
 
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List

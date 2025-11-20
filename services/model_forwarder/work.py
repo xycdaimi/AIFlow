@@ -1,4 +1,11 @@
-"""Model Forwarder Worker - 推理协程"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: Model Forwarder Worker - 推理协程
+"""
 
 import asyncio
 from typing import Dict, Any

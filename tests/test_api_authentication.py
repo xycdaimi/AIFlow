@@ -1,4 +1,11 @@
-"""测试 API Gateway 的 API Key 认证功能"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: 测试 API Gateway 的 API Key 认证功能
+"""
 
 import requests
 import json

@@ -1,4 +1,11 @@
-"""Log Service - 从 RabbitMQ 消费日志并统一写入 PostgreSQL"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: Log Service - 从 RabbitMQ 消费日志并统一写入 PostgreSQL
+"""
 
 import uvicorn
 import asyncio

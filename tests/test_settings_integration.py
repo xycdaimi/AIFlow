@@ -1,5 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-测试 Settings 配置类在各个模块中的集成
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: 测试 Settings 配置类在各个模块中的集成
 
 验证所有模块都正确使用新的 Settings 配置类
 """

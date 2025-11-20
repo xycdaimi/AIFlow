@@ -832,9 +832,9 @@ mypy .
 
 ## 📞 联系我们
 
-- **项目主页**: https://github.com/yourusername/AIFlow
-- **问题反馈**: https://github.com/yourusername/AIFlow/issues
-- **邮箱**: your.email@example.com
+- **项目主页**: https://github.com/xycdaimi/AIFlow
+- **问题反馈**: https://github.com/xycdaimi/AIFlow/issues
+- **邮箱**: xycdaimi@gmail.com
 
 ---
 

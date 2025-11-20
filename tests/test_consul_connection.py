@@ -1,4 +1,11 @@
-"""测试 Consul 连接"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: 测试 Consul 连接
+"""
 
 import asyncio
 from core.utils import ConsulClient

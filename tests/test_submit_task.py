@@ -1,4 +1,11 @@
-"""测试提交任务到 API Gateway"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@Author: xycdaimi
+@Email: xycdaimi@gmail.com
+@Date: 2025-11-20
+@Description: 测试提交任务到 API Gateway
+"""
 
 import httpx
 import asyncio
