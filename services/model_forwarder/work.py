@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from core.protocols import LogMessage, LogLevel
 from core.utils import RabbitMQClient
 from core.config import settings
+from core.errors import ErrorCode, create_error_response
 from .infer import infer
 
 
@@ -75,11 +76,15 @@ async def inference_worker(
                     f"Inference failed for task {task_id}: {str(e)}"
                 )
 
-                # 将错误结果放入结果队列
+                # 将错误结果放入结果队列（使用标准错误格式）
                 error_result = {
                     "task_id": task_id,
                     "status": "FAILED",
-                    "error": str(e)
+                    "error": create_error_response(
+                        ErrorCode.INFERENCE_FAILED,
+                        message=f"Inference failed: {str(e)}",
+                        details={"task_id": task_id, "task_type": task_type, "error": str(e)}
+                    )
                 }
                 await result_queue.put(error_result)
 

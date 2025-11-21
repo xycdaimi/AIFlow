@@ -7,7 +7,7 @@
 @Description: API routes for API Gateway
 """
 
-from fastapi import APIRouter, HTTPException, Request, status, UploadFile, Form, File, Depends
+from fastapi import APIRouter, Request, status, UploadFile, Form, File, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, Dict, Any, Set, Tuple, List
 from datetime import datetime, timezone
@@ -28,6 +28,16 @@ from core.config import settings
 from core.protocols import LogMessage
 from datetime import datetime, timezone
 from .dependencies import redis_client, rabbitmq_client, minio_store
+from core.errors import (
+    ErrorCode,
+    raise_error,
+    raise_unauthorized,
+    raise_invalid_api_key,
+    raise_task_not_found,
+    raise_missing_parameter,
+    raise_internal_error,
+    handle_errors
+)
 import json
 
 router = APIRouter(tags=["tasks"])
@@ -65,19 +75,13 @@ async def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = D
 
     # 开发模式下不需要验证
     if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
-        )
+        raise_unauthorized("Missing API key in Authorization header")
 
     api_key = credentials.credentials
 
     # 验证 API Key
     if api_key not in valid_api_keys:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key"
-        )
+        raise_invalid_api_key()
 
     return api_key
 
@@ -202,6 +206,7 @@ class TaskCallbackRequest(BaseModel):
     error: Optional[str] = None
 
 @router.post("/tasks_json", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@handle_errors
 async def create_task_josn(
     _: str = Depends(verify_api_key),
     task_request: Optional[TaskRequest] = None
@@ -217,10 +222,10 @@ async def create_task_josn(
             - inference_params: 推理参数 (可选)
             - callback: 回调配置 (可选)
                 base64 数据会自动上传到 MinIO 并转换为 URL
-    
+
     Args:
         task_request: JSON 格式的任务请求（application/json）
-    
+
     Returns:
         TaskResponse: 包含任务 ID 和状态的响应
     """
@@ -231,10 +236,7 @@ async def create_task_josn(
         # 记录任务创建日志
         await _send_log(task_id, LogLevel.INFO, "task.created", f"Task {task_id} created")
         if not task_request:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="task_request is required"
-            )
+            raise_missing_parameter("task_request")
         # 解析 JSON 请求
         final_task_type = task_request.task_type
         final_model_spec = task_request.model_spec
@@ -317,8 +319,6 @@ async def create_task_josn(
             message="Task created successfully"
         )
 
-    except HTTPException:
-        raise
     except Exception as e:
         # 记录错误日志
         await _send_log(
@@ -327,12 +327,14 @@ async def create_task_josn(
             "task.create_failed",
             f"Failed to create task: {str(e)}"
         )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create task: {str(e)}"
+        raise_error(
+            ErrorCode.TASK_CREATE_FAILED,
+            message=f"Failed to create task: {str(e)}",
+            details={"task_id": task_id if 'task_id' in locals() else "unknown", "error": str(e)}
         )
 
 @router.post("/tasks_form", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@handle_errors
 async def create_task_form(
     _: str = Depends(verify_api_key),
     task_type: Optional[str] = None,
@@ -372,15 +374,9 @@ async def create_task_form(
         await _send_log(task_id, LogLevel.INFO, "task.created", f"Task {task_id} created")
         # 验证必填字段
         if not task_type:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="task_type is required for multipart/form-data requests"
-            )
+            raise_missing_parameter("task_type")
         if not model_spec:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="model_spec is required for multipart/form-data requests"
-            )
+            raise_missing_parameter("model_spec")
 
         # 解析表单数据
         final_task_type = task_type
@@ -389,9 +385,10 @@ async def create_task_form(
             model_spec_dict = json.loads(model_spec)
             final_model_spec = ModelSpec(**model_spec_dict)
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid model_spec JSON: {str(e)}"
+            raise_error(
+                ErrorCode.INVALID_MODEL_SPEC,
+                message=f"Invalid model_spec JSON: {str(e)}",
+                details={"error": str(e)}
             )
 
         # 解析 payload (可选)
@@ -400,9 +397,10 @@ async def create_task_form(
             try:
                 final_payload = json.loads(payload)
             except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid payload JSON: {str(e)}"
+                raise_error(
+                    ErrorCode.INVALID_PAYLOAD,
+                    message=f"Invalid payload JSON: {str(e)}",
+                    details={"error": str(e)}
                 )
 
         # 处理上传的文件
@@ -448,9 +446,10 @@ async def create_task_form(
             try:
                 final_inference_params = json.loads(inference_params)
             except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid inference_params JSON: {str(e)}"
+                raise_error(
+                    ErrorCode.INVALID_INFERENCE_PARAMS,
+                    message=f"Invalid inference_params JSON: {str(e)}",
+                    details={"error": str(e)}
                 )
 
         # 解析回调配置 (可选)
@@ -460,9 +459,10 @@ async def create_task_form(
                 callback_dict = json.loads(callback)
                 final_callback = CallbackConfig(**callback_dict)
             except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid callback JSON: {str(e)}"
+                raise_error(
+                    ErrorCode.INVALID_CALLBACK,
+                    message=f"Invalid callback JSON: {str(e)}",
+                    details={"error": str(e)}
                 )
 
         # 发布任务到 RabbitMQ
@@ -514,8 +514,6 @@ async def create_task_form(
             message="Task created successfully"
         )
 
-    except HTTPException:
-        raise
     except Exception as e:
         # 记录错误日志
         await _send_log(
@@ -524,12 +522,10 @@ async def create_task_form(
             "task.create_failed",
             f"Failed to create task: {str(e)}"
         )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create task: {str(e)}"
-        )
+        raise_internal_error(f"Failed to create task: {str(e)}")
 
 @router.post("/internal/task-callback", status_code=status.HTTP_200_OK)
+@handle_errors
 async def task_callback(request: Request, callback_request: TaskCallbackRequest):
     """
     内部回调接口：接收 model_forwarder 的任务完成通知，并按以下规则处理：
@@ -539,8 +535,8 @@ async def task_callback(request: Request, callback_request: TaskCallbackRequest)
     # 检查api_key
     api_key = request.headers.get("Authorization")
     if api_key != f"Bearer {settings.api_gateway_internal_key}":
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
+        raise_error(ErrorCode.INVALID_INTERNAL_KEY, "Invalid internal service key")
+
     task_id = callback_request.task_id
 
     try:
@@ -556,10 +552,7 @@ async def task_callback(request: Request, callback_request: TaskCallbackRequest)
                 "callback.task_not_found",
                 f"Task {task_id} not found in Redis, callback discarded"
             )
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task {task_id} not found in Redis"
-            )
+            raise_task_not_found(task_id)
 
         now = datetime.now(timezone.utc)
 
@@ -732,8 +725,6 @@ async def task_callback(request: Request, callback_request: TaskCallbackRequest)
                 "message": f"Task resubmitted for retry (attempt {task.retry_count}/{task.max_retries})"
             }
 
-    except HTTPException:
-        raise
     except Exception as e:
         print(f"❌ Error processing callback for task {task_id}: {e}")
         await _send_log(
@@ -742,12 +733,10 @@ async def task_callback(request: Request, callback_request: TaskCallbackRequest)
             "callback.error",
             f"Error processing callback for task {task_id}: {str(e)}"
         )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process callback: {str(e)}"
-        )
+        raise_internal_error(f"Failed to process callback: {str(e)}")
 
 @router.get("/tasks/{task_id}", response_model=TaskDetail)
+@handle_errors
 async def get_task(task_id: str):
     """
     Get task details and status.
@@ -762,23 +751,20 @@ async def get_task(task_id: str):
         task = await redis_client.get_task(task_id)
 
         if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task {task_id} not found"
-            )
+            raise_task_not_found(task_id)
 
         return task
 
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve task: {str(e)}"
+        raise_error(
+            ErrorCode.REDIS_OPERATION_FAILED,
+            message="Failed to retrieve task from Redis",
+            details={"task_id": task_id, "error": str(e)}
         )
 
 
 @router.get("/tasks/{task_id}/status")
+@handle_errors
 async def get_task_status(task_id: str):
     """
     Get task status only.
@@ -793,10 +779,7 @@ async def get_task_status(task_id: str):
         task = await redis_client.get_task(task_id)
 
         if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task {task_id} not found"
-            )
+            raise_task_not_found(task_id)
 
         return {
             "task_id": task_id,
@@ -805,16 +788,16 @@ async def get_task_status(task_id: str):
             "updated_at": task.updated_at
         }
 
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve task status: {str(e)}"
+        raise_error(
+            ErrorCode.REDIS_OPERATION_FAILED,
+            message="Failed to retrieve task status from Redis",
+            details={"task_id": task_id, "error": str(e)}
         )
 
 
 @router.get("/tasks/{task_id}/result")
+@handle_errors
 async def get_task_result(task_id: str):
     """
     Get task result (only for completed tasks).
@@ -829,23 +812,22 @@ async def get_task_result(task_id: str):
         task = await redis_client.get_task(task_id)
 
         if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task {task_id} not found"
-            )
+            raise_task_not_found(task_id)
 
         if task.status == TaskStatus.PENDING or task.status == TaskStatus.PROCESSING:
-            raise HTTPException(
-                status_code=status.HTTP_202_ACCEPTED,
-                detail=f"Task is still {task.status.lower()}"
+            raise_error(
+                ErrorCode.TASK_PROCESSING,
+                message=f"Task is still {task.status.lower()}",
+                details={"task_id": task_id, "status": task.status}
             )
 
         await redis_client.delete_task(task_id)
 
         if task.status == TaskStatus.FAILED:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Task failed: {task.error}"
+            raise_error(
+                ErrorCode.TASK_FAILED,
+                message=f"Task failed: {task.error}",
+                details={"task_id": task_id, "error": task.error}
             )
 
         return {
@@ -854,16 +836,16 @@ async def get_task_result(task_id: str):
             "result": task.result
         }
 
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve task result: {str(e)}"
+        raise_error(
+            ErrorCode.REDIS_OPERATION_FAILED,
+            message="Failed to retrieve task result from Redis",
+            details={"task_id": task_id, "error": str(e)}
         )
 
 
 @router.delete("/tasks/{task_id}")
+@handle_errors
 async def delete_task(task_id: str):
     """
     Delete a task and cleanup associated resources including shared memory.
@@ -874,33 +856,21 @@ async def delete_task(task_id: str):
     Returns:
         Deletion confirmation
     """
-    try:
-        task = await redis_client.get_task(task_id)
+    task = await redis_client.get_task(task_id)
 
-        if not task:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Task {task_id} not found"
-            )
+    if not task:
+        raise_task_not_found(task_id)
 
-        # Cleanup shared memory if enabled
-        await redis_client.cleanup_task_shared_memory(task_id)
+    # Cleanup shared memory if enabled
+    await redis_client.cleanup_task_shared_memory(task_id)
 
-        # Delete task from Redis
-        await redis_client.client.delete(f"task:{task_id}")
+    # Delete task from Redis
+    await redis_client.client.delete(f"task:{task_id}")
 
-        return {
-            "task_id": task_id,
-            "message": "Task deleted successfully"
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete task: {str(e)}"
-        )
+    return {
+        "task_id": task_id,
+        "message": "Task deleted successfully"
+    }
 
 # # --- MinIO helpers ---
 # async def _convert_minio_urls_to_base64(obj: Any) -> tuple[Any, Set[str]]:

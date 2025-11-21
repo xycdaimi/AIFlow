@@ -21,6 +21,8 @@ from aio_pika import IncomingMessage
 from core.config import settings
 from core.utils import RabbitMQClient
 from core.protocols import LogMessage
+from core.exception_handlers import register_exception_handlers
+from core.errors import ErrorCode
 
 
 # 全局数据库连接池
@@ -159,20 +161,24 @@ async def _flush_batch() -> bool:
 
         except asyncpg.PostgresConnectionError as e:
             # 数据库连接错误，可以重试
-            print(f"⚠️  Database connection error (attempt {attempt}/{max_retries}): {e}")
+            error_msg = f"Database connection error (attempt {attempt}/{max_retries}): {str(e)}"
+            print(f"⚠️  {error_msg}")
             if attempt < max_retries:
                 await asyncio.sleep(retry_delay)
                 retry_delay *= 2  # 指数退避
             else:
                 # 所有重试都失败，写入备份文件
                 print(f"❌ All retries failed, writing {len(log_batch)} logs to backup file")
+                print(f"   Error code: {ErrorCode.POSTGRES_CONNECTION_FAILED}")
                 await _write_batch_to_backup_file(log_batch)
                 log_batch = []
                 return False
 
         except Exception as e:
             # 其他错误（如数据格式错误），不重试
-            print(f"❌ Error flushing logs to database: {e}")
+            error_msg = f"Error flushing logs to database: {str(e)}"
+            print(f"❌ {error_msg}")
+            print(f"   Error code: {ErrorCode.LOG_WRITE_FAILED}")
             # 写入备份文件
             await _write_batch_to_backup_file(log_batch)
             log_batch = []
@@ -369,6 +375,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# 注册全局异常处理器
+register_exception_handlers(app)
 
 
 @app.get("/")

@@ -24,6 +24,7 @@ from aio_pika import IncomingMessage
 from core.config import settings
 from core.utils import ConsulClient, RabbitMQClient, RedisClient
 from core.protocols import LogMessage, LogLevel, TaskStatus
+from core.errors import ErrorCode
 
 
 class TaskScheduler:
@@ -249,12 +250,16 @@ class TaskScheduler:
             print(f"❌ Error processing task message: {e}")
             import traceback
             traceback.print_exc()
-            # 发送错误日志
+            # 发送错误日志（包含错误码）
             await self._send_log(
                 task_id,
                 LogLevel.ERROR,
                 "task.process_failed",
-                f"Error processing task {task_id}: {str(e)}"
+                f"Error processing task {task_id}: {str(e)}",
+                {
+                    "error_code": ErrorCode.TASK_SCHEDULE_FAILED,
+                    "error": str(e)
+                }
             )
             # 发生异常时也 reject 并重新入队
             await message.reject(requeue=True)
@@ -309,9 +314,19 @@ class TaskScheduler:
 
             return forwarders
         except Exception as e:
-            print(f"❌ Error discovering forwarders from Consul: {e}")
+            error_msg = f"Error discovering forwarders from Consul: {str(e)}"
+            print(f"❌ {error_msg}")
             import traceback
             traceback.print_exc()
+
+            # 记录错误日志
+            await self._send_log(
+                "system",
+                LogLevel.ERROR,
+                "consul.discovery_failed",
+                error_msg,
+                {"error_code": ErrorCode.CONSUL_DISCOVERY_FAILED, "error": str(e)}
+            )
             return []
 
     async def _get_forwarder_status(self, forwarder_url: str) -> Tuple[bool, Optional[Dict]]:
@@ -536,7 +551,12 @@ class TaskScheduler:
                     LogLevel.ERROR,
                     "task.forward_failed",
                     f"Failed to forward task {task_id}: {response.status_code}",
-                    {"status_code": response.status_code, "response": response.text, "forwarder_url": forwarder_url}
+                    {
+                        "error_code": ErrorCode.TASK_FORWARD_FAILED,
+                        "status_code": response.status_code,
+                        "response": response.text,
+                        "forwarder_url": forwarder_url
+                    }
                 )
                 return False
 
@@ -546,7 +566,11 @@ class TaskScheduler:
                 task_id,
                 LogLevel.ERROR,
                 "task.schedule_failed",
-                f"Error scheduling task {task_id}: {str(e)}"
+                f"Error scheduling task {task_id}: {str(e)}",
+                {
+                    "error_code": ErrorCode.TASK_SCHEDULE_FAILED,
+                    "error": str(e)
+                }
             )
             return False
 

@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from core.config import settings
 from core.utils import ConsulClient, RabbitMQClient
+from core.exception_handlers import register_exception_handlers
 from .routes import router, set_queues, set_rabbitmq_client, set_http_client, set_shutting_down
 from .work import inference_worker
 
@@ -141,6 +142,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# 注册全局异常处理器
+register_exception_handlers(app)
 
 
 @app.get("/")

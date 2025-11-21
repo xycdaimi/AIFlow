@@ -7,12 +7,17 @@
 @Description: Model Forwarder Routes - 处理任务接收和状态查询
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 from core.protocols import TaskMessage, LogMessage, LogLevel
 from core.utils import RabbitMQClient
 from core.config import settings
+from core.errors import (
+    ErrorCode,
+    raise_error,
+    handle_errors
+)
 import httpx
 from services.model_forwarder.infer import get_registered_task_types
 
@@ -100,6 +105,7 @@ async def get_supported_tasks():
 
 
 @router.post("/api/v1/tasks")
+@handle_errors
 async def receive_task(task_data: Dict[str, Any], background_tasks: BackgroundTasks):
     """
     接收来自 Task Scheduler 的任务
@@ -114,17 +120,21 @@ async def receive_task(task_data: Dict[str, Any], background_tasks: BackgroundTa
 
     # 检查是否正在关闭
     if shutting_down:
-        raise HTTPException(status_code=503, detail="Forwarder is shutting down, not accepting new tasks")
+        raise_error(ErrorCode.SERVICE_SHUTDOWN, "Forwarder is shutting down, not accepting new tasks")
 
     # 检查是否正在处理任务
     if current_task is not None:
-        raise HTTPException(status_code=503, detail="Forwarder is busy processing another task")
+        raise_error(ErrorCode.FORWARDER_BUSY, "Forwarder is busy processing another task")
 
     # 验证必需字段
     required_fields = ["task_id", "task_type", "model_spec", "payload", "callback"]
     for field in required_fields:
         if field not in task_data:
-            raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+            raise_error(
+                ErrorCode.MISSING_PARAMETER,
+                f"Missing required field: {field}",
+                {"field": field}
+            )
 
     task_id = task_data["task_id"]
 
@@ -202,7 +212,8 @@ async def process_result_callback():
                 task_id,
                 LogLevel.ERROR,
                 "callback.all_retries_failed",
-                f"All callback retries failed for task {task_id}"
+                f"All callback retries failed for task {task_id}",
+                {"error_code": ErrorCode.CALLBACK_FAILED}
             )
 
     except Exception as e:
@@ -212,7 +223,8 @@ async def process_result_callback():
                 current_task.get("task_id", "unknown"),
                 LogLevel.ERROR,
                 "callback.error",
-                f"Error processing callback: {str(e)}"
+                f"Error processing callback: {str(e)}",
+                {"error_code": ErrorCode.CALLBACK_FAILED, "error": str(e)}
             )
 
     finally:

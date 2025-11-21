@@ -11,6 +11,7 @@ import uvicorn
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from core.config import settings
+from core.exception_handlers import register_exception_handlers
 from .routes import router
 from .dependencies import redis_client, rabbitmq_client, minio_store
 
@@ -52,6 +53,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Register global exception handlers
+register_exception_handlers(app)
 
 # Include routers
 app.include_router(router, prefix="/api/v1")
